@@ -226,7 +226,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 </style>
 </head>
 <body>
-<!-- build: 2026-09-26 3D v2.1 -->
+<!-- build: 2026-09-27 3D v2.2 -->
 <canvas id="c"></canvas>
 <div id="feverFx"></div>
 
@@ -260,12 +260,11 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 
 <div id="title" class="screen">
   <div class="logo" aria-label="ポップシューター3D"><span>ポ</span><span>ッ</span><span>プ</span><span>シ</span><span>ュ</span><span>ー</span><span>タ</span><span>ー</span><b class="badge3d"><i>3</i><i>D</i></b></div>
-  <div class="sub-copy">そらの ぷにぷにを ポンッと はじけさせよう！</div>
   <div class="diff" id="diffSel"><span class="lbl">レベル</span>
     <button data-d="easy">かんたん</button><button data-d="normal" class="on">ふつう</button><button data-d="hard">むずかしい</button></div>
   <button class="btn" id="btnStart">スタート</button>
   <div class="title-row"><button class="btn sub small" id="btnSound">おと：オン</button></div>
-  <div class="ver">v2.1 3D / 2026-09-26</div>
+  <div class="ver">v2.2 3D / 2026-09-27</div>
 </div>
 
 <div id="howto" class="screen hidden">
@@ -283,7 +282,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
       <div class="card"><div class="ic"><div class="mini-aim"><i></i></div></div>
         <div class="tx"><b>ねらう</b>まえの わっかに てきを かさねよう。ピンクに なったら うちどき！</div></div>
       <div class="card"><div class="ic"><div class="mini-warn"><i></i></div></div>
-        <div class="tx"><b>よける</b>トゲトゲの たまに ちゅうい！ピンクの わっかは たまが くる ばしょ</div></div>
+        <div class="tx"><b>よける</b>トゲトゲは こわせないよ！ピンクの わっかは ぶつかる ばしょ。よけよう</div></div>
       <div class="card"><div class="ic"><div class="mini-gauge"><i></i></div><div class="tata">⭐⭐⭐</div></div>
         <div class="tx"><b>フィーバー</b>⭐を あつめて ゲージが いっぱいに なると さいきょう パワー！</div></div>
       <div class="card"><div class="ic"><div class="mini-boss"></div></div>
@@ -356,7 +355,7 @@ const CONFIG = {
   burstCooldown: 0.18,    // 連射のあと、次に撃てるまでの待ち時間（秒）
   feverCooldownRate: 0.35,// フィーバー中の待ち時間の倍率
   bulletSpeed: 90,        // 自機の弾の速さ
-  aimAssist: 2.8,         // 当たりやすさ補正（わっかと敵がこの距離より近いと自動でねらう）
+  aimAssist: 1.6,         // 当たりやすさ補正（わっかと敵がこの距離より近いと自動でねらう）
   chargeStartDelay: 0.35, // 押してからチャージが始まるまで（秒）
   chargeTime: 0.8,        // チャージ開始から満タンまで（秒）
   chargeDamage: 12,       // チャージショットの威力
@@ -372,7 +371,7 @@ const CONFIG = {
   itemWeights: { spread: 13, laser: 13, homing: 13, ball: 13, heart: 9, shield: 10, bomb: 10, magnet: 12, speed: 16 },
   weaponTime: 15,         // ぶきが続く時間（秒）。同じぶきを取ると時間がもどる
   // --- フィーバー ---
-  feverTime: 10, feverPerStar: 1,
+  feverTime: 10, feverPerStar: 2,
   // --- 演出 ---
   hitStopSmall: 0.035, hitStopBig: 0.07, hitStopBoss: 0.25,
   shakeScale: 1.0, comboWindow: 1.6,
@@ -391,6 +390,14 @@ const CONFIG = {
   enemyHpScale: 1,        // 敵の体力の倍率
   bossItemInterval: 12,   // ボス戦でアイテムが出る間隔（秒）
   hitZ: -100,             // 敵に弾が当たるようになる奥行き（これより奥の敵には当たらない）
+  // --- トゲトゲ（こわせない じゃまもの） ---
+  obstacleInterval: 7,    // トゲトゲが出てくる間隔（秒）
+  obstacleSpeed: 32,      // トゲトゲが近づいてくる速さ
+  obstacleWalls: true,    // トゲトゲのかべ（横一列・たて一列）を出すか
+  // --- アイテムの吸いよせ ---
+  itemPullRange: 1.8,     // アイテムが自機に吸いよせられはじめる距離（マグネットなし）
+  itemPickRange: 1.7,     // アイテムを取れる距離
+  starPullRange: 2.2,     // 星が吸いよせられはじめる距離（マグネットなし）
   // --- 音量 ---
   bgmVolume: 0.32, seVolume: 0.6,
 };
@@ -399,10 +406,12 @@ const CONFIG = {
 // ---------------------------------------------------------------------
 const LEVELS = {
   easy: { label: 'かんたん', maxHP: 5, startBombs: 2, invincibleTime: 2.2, enemyBulletSpeed: 19, shooterInterval: 3.0, bigInterval: 3.6,
-          waveShootRate: 0.1, enemyDensity: 0.5, maxEnemies: 8, maxEnemyBullets: 14, dropHoming: 0.8, enemyHpScale: 0.75, bossHP: 320, bossItemInterval: 8 },
+          waveShootRate: 0.1, enemyDensity: 0.5, maxEnemies: 8, maxEnemyBullets: 14, dropHoming: 0.8, enemyHpScale: 0.75, bossHP: 320, bossItemInterval: 8,
+          obstacleInterval: 11, obstacleSpeed: 26, obstacleWalls: false },
   normal: { label: 'ふつう' },
   hard: { label: 'むずかしい', maxHP: 3, startBombs: 1, invincibleTime: 1.4, enemyBulletSpeed: 28, shooterInterval: 1.6, bigInterval: 2.1,
-          waveShootRate: 0.45, enemyDensity: 0.85, maxEnemies: 13, maxEnemyBullets: 36, dropHoming: 3.2, enemyHpScale: 1.25, bossHP: 600, bossItemInterval: 16 },
+          waveShootRate: 0.45, enemyDensity: 0.85, maxEnemies: 13, maxEnemyBullets: 36, dropHoming: 3.2, enemyHpScale: 1.25, bossHP: 600, bossItemInterval: 16,
+          obstacleInterval: 4.5, obstacleSpeed: 38 },
 };
 const BASE_CONFIG = { ...CONFIG };
 let level = 'normal';
@@ -734,6 +743,63 @@ const eBulletOut = new THREE.InstancedMesh(spikeGeo, OUTLINE, EB_N);
 const eBulletBody = new THREE.InstancedMesh(spikeGeo, new THREE.MeshToonMaterial({ color: 0x5a2a86, gradientMap: gradTex, flatShading: true }), EB_N);
 const eBulletHi = new THREE.InstancedMesh(sphereLo, new THREE.MeshBasicMaterial({ color: 0xff2a55, transparent: true, opacity: 0.38, depthWrite: false }), EB_N);
 [eBulletOut, eBulletBody, eBulletHi].forEach(m => { m.frustumCulled = false; m.count = 0; scene.add(m); });
+// ---------------------------------------------------------------------
+//  トゲトゲ（こわせない じゃまもの）：弾が当たらない。よけるしかない
+// ---------------------------------------------------------------------
+const OB_N = 48;
+const obMat = new THREE.MeshToonMaterial({ color: 0x4b2470, gradientMap: gradTex, flatShading: true });
+const obGlowMat = new THREE.MeshBasicMaterial({ color: 0xff2a55, transparent: true, opacity: 0.22, depthWrite: false });
+const obEyeMat = new THREE.MeshBasicMaterial({ color: 0xff4d6d });
+const obstacles = makePool(OB_N, () => {
+  const g = new THREE.Group();
+  const body = withOutline(new THREE.Mesh(spikeGeo, obMat), 1.08); g.add(body);
+  const eye = new THREE.Mesh(sphereLo, obEyeMat); eye.scale.set(0.32, 0.32, 0.12); eye.position.z = 0.82; g.add(eye);
+  const glow = new THREE.Mesh(sphereLo, obGlowMat); glow.scale.setScalar(1.45); g.add(glow);
+  g.visible = false; scene.add(g);
+  return { active: false, x: 0, y: 0, z: 0, r: 1.1, t: 0, mesh: g, body, glow, eye };
+});
+function spawnObstacle(x, y, r = 1.1, z = SPAWN_Z) {
+  const o = take(obstacles); if (!o) return;
+  Object.assign(o, { active: true, x: clamp(x, -AREA.x, AREA.x), y: clamp(y, AREA.yMin, AREA.yMax), z, r, t: rand(0, 6) });
+  o.mesh.visible = true; o.mesh.scale.setScalar(r * 0.78); o.mesh.position.set(o.x, o.y, o.z);
+}
+// トゲトゲの出し方（どれか1つをえらぶ）
+function spawnObstaclePattern() {
+  const pats = CONFIG.obstacleWalls ? ['aimed', 'aimed', 'row', 'col', 'scatter'] : ['aimed', 'scatter'];
+  const p = pats[Math.floor(Math.random() * pats.length)];
+  if (p === 'aimed') {   // 自機のいる場所をねらってくる
+    spawnObstacle(player.x, player.y, 1.3);
+  } else if (p === 'row') {   // 横一列のかべ（自機の高さのあたり）→ 上か下によける
+    const y = clamp(player.y + rand(-1, 1), AREA.yMin + 0.4, AREA.yMax - 0.4);
+    for (let x = -AREA.x; x <= AREA.x + 0.01; x += 2.8) spawnObstacle(x, y, 1.1);
+  } else if (p === 'col') {   // たて一列のかべ（自機の左右のあたり）→ 左か右によける
+    const x = clamp(player.x + rand(-1.5, 1.5), -AREA.x + 1, AREA.x - 1);
+    for (let y = AREA.yMin; y <= AREA.yMax + 0.01; y += 2.4) spawnObstacle(x, y, 1.1);
+  } else {   // あちこちに少し
+    const n = CONFIG.obstacleWalls ? 3 : 2;
+    for (let i = 0; i < n; i++) spawnObstacle(rand(-AREA.x, AREA.x), rand(AREA.yMin, AREA.yMax), 1.1, SPAWN_Z - i * 12);
+  }
+}
+function updateObstacles(dt) {
+  for (const o of obstacles) {
+    if (!o.active) continue;
+    const pz = o.z; o.t += dt; o.z += CONFIG.obstacleSpeed * dt;
+    if (player.alive && crossesPlayer(pz, o.z)) {
+      const d = Math.hypot(o.x - player.x, o.y - player.y);
+      if (d < o.r + CONFIG.hitRadius) {
+        if (player.shield > 0) { burst(o.x, o.y, PZ, [0x7fd3ff, 0xffffff], 8, 6, 0.18, 0.3); SND.clink(); }
+        else hurtPlayer();
+      }
+    }
+    o.mesh.position.set(o.x, o.y + Math.sin(o.t * 2) * 0.12, o.z);
+    o.body.rotation.set(o.t * 0.7, o.t * 1.1, 0);
+    o.glow.scale.setScalar(1.45 + Math.sin(o.t * 6) * 0.1);
+    o.eye.scale.set(0.32, 0.32 * (Math.sin(o.t * 3) > 0.95 ? 0.2 : 1), 0.12);   // ときどきまばたき
+    if (o.z > 10) { o.active = false; o.mesh.visible = false; }
+  }
+}
+let obT = 0;
+
 // 敵の弾が「くる場所」わっか
 const warnMesh = new THREE.InstancedMesh(new THREE.RingGeometry(0.72, 1, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthTest: false, fog: false }), EB_N);
 warnMesh.frustumCulled = false; warnMesh.count = 0; warnMesh.renderOrder = 17; warnMesh.setColorAt(0, tmpColor.set(0xffffff)); scene.add(warnMesh);
@@ -882,8 +948,9 @@ function noise(dur, o = {}) {
   src.connect(fl); fl.connect(g); g.connect(o.dest || seGain);
   src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.03);
 }
-let lastHitSnd = 0, lastStarSnd = 0, starChain = 0;
+let lastHitSnd = 0, lastStarSnd = 0, starChain = 0, lastClink = 0;
 const SND = {
+  clink() { if (!AC || AC.currentTime - lastClink < 0.06) return; lastClink = AC.currentTime; tone(2400, 1900, 0.05, { type: 'square', vol: 0.03 }); tone(3600, 3200, 0.04, { type: 'triangle', vol: 0.03 }); },
   shot(kind = 'normal') {
     if (!AC) return; const t = AC.currentTime;
     switch (kind) {
@@ -1053,21 +1120,37 @@ const WAVES = [
   { t: 120, type: 'big', form: 'single', x: 0, y: 4.8 },
 ];
 function buildSpawnList() {
+  // 隊列の形はそのままに、出てくる場所（隊列のまんなか）を毎回ばらばらにする
   const list = [];
+  let prevX = 0, prevY = 4.8;
   for (const w0 of WAVES) {
     // 小さい敵の隊列は数を減らし、そのぶん間を広げる
     const thin = (w0.type === 'drop' || w0.type === 'wave') && (w0.n || 1) > 2;
     const w = thin ? { ...w0, n: Math.max(2, Math.round(w0.n * CONFIG.enemyDensity)), gap: w0.gap && w0.gap / Math.sqrt(CONFIG.enemyDensity), dt: w0.dt && w0.dt / CONFIG.enemyDensity } : w0;
-    const n = w.n || 1;
+    const n = w.n || 1, SH = 0.75;   // 隊列を少し小さくまとめる
+    const rel = [];
     for (let i = 0; i < n; i++) {
-      const off = i - (n - 1) / 2; let x = w.x, y = w.y, t = w.t;
-      if (w.form === 'row' || w.form === 'rise') x = w.x + off * w.gap;
-      else if (w.form === 'col') y = w.y + off * w.gap;
+      const off = i - (n - 1) / 2; let x = 0, y = 0, t = w.t;
+      if (w.form === 'row' || w.form === 'rise') x = off * w.gap * SH;
+      else if (w.form === 'col') y = off * w.gap * SH;
       else if (w.form === 'train') t = w.t + i * w.dt;
-      else if (w.form === 'v') { x = w.x + off * w.gap; y = w.y + Math.abs(off) * 0.9; t = w.t + Math.abs(off) * 0.25; }
-      else if (w.form === 'ring') { const a = i / n * Math.PI * 2 + Math.PI / 2; x = w.x + Math.cos(a) * w.rr; y = w.y + Math.sin(a) * w.rr; }
-      list.push({ t, type: w.type, x: clamp(x, -AREA.x + 0.2, AREA.x - 0.2), y: clamp(y, AREA.yMin, AREA.yMax), rise: w.form === 'rise' });
+      else if (w.form === 'v') { x = off * w.gap * SH; y = Math.abs(off) * 0.8; t = w.t + Math.abs(off) * 0.25; }
+      else if (w.form === 'ring') { const a = i / n * Math.PI * 2 + Math.PI / 2; x = Math.cos(a) * w.rr * SH; y = Math.sin(a) * w.rr * SH; }
+      rel.push({ x, y, t });
     }
+    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    for (const r of rel) { minX = Math.min(minX, r.x); maxX = Math.max(maxX, r.x); minY = Math.min(minY, r.y); maxY = Math.max(maxY, r.y); }
+    const xLo = -AREA.x + 0.3 - minX, xHi = AREA.x - 0.3 - maxX;
+    const yLo = AREA.yMin + 0.2 - minY, yHi = AREA.yMax - 0.2 - maxY;
+    // 前の隊列と同じような場所にならないように、はなれた場所をえらぶ
+    let cx = 0, cy = 4.8;
+    for (let k = 0; k < 10; k++) {
+      cx = xHi > xLo ? rand(xLo, xHi) : (xLo + xHi) / 2;
+      cy = yHi > yLo ? rand(yLo, yHi) : (yLo + yHi) / 2;
+      if (Math.hypot(cx - prevX, (cy - prevY) * 1.3) > 4) break;
+    }
+    prevX = cx; prevY = cy;
+    for (const r of rel) list.push({ t: r.t, type: w.type, x: clamp(cx + r.x, -AREA.x + 0.2, AREA.x - 0.2), y: clamp(cy + r.y, AREA.yMin, AREA.yMax), rise: w.form === 'rise' });
   }
   return list.sort((a, b) => a.t - b.t);
 }
@@ -1189,7 +1272,7 @@ function fireKind(kind, idx) {
   if (kind === 'normal') { const sp = CONFIG.bulletSpeed, [ax, ay] = lead(sp); addBullet('normal', px, py, sz, ax, ay, -sp); }
   else if (kind === 'spread') {
     const sp = CONFIG.bulletSpeed, [ax, ay] = lead(sp);
-    for (const deg of [-7, 0, 7]) { const a = deg * Math.PI / 180; addBullet('spread', px, py, sz, ax + Math.sin(a) * sp, ay, -Math.cos(a) * sp, { dmg: 0.8, life: 1.1 }); }   // 3方向
+    for (const deg of [-4, 0, 4]) { const a = deg * Math.PI / 180; addBullet('spread', px, py, sz, ax + Math.sin(a) * sp, ay, -Math.cos(a) * sp, { dmg: 0.8, life: 1.1 }); }   // 3方向
   } else if (kind === 'laser') { const sp = 170, [ax, ay] = lead(sp); addBullet('laser', px, py, sz - 1, ax, ay, -sp, { dmg: 1.5, pierce: true, r: 0.45, life: 0.8 }); }
   else if (kind === 'homing') { for (const s of [-1, 1]) addBullet('homing', px + s * 1.1, py + 0.3, PZ - 0.5, s * 14, 6, -50, { homing: true, dmg: 1.4, life: 2.6 }); }
   else if (kind === 'ball') {
@@ -1338,6 +1421,7 @@ function updatePlayer(dt) {
 function updateSpawns(dt) {
   if (state !== 'playing') return;
   stageTime += dt;
+  if (stageTime > 6) { obT -= dt; if (obT <= 0) { obT = CONFIG.obstacleInterval * rand(0.8, 1.2); spawnObstaclePattern(); } }
   while (spawnIdx < spawnList.length && spawnList[spawnIdx].t <= stageTime) { const s = spawnList[spawnIdx++]; if (s.type === 'big' || enemies.filter(e => e.active).length < CONFIG.maxEnemies) spawnEnemy(s.type, s.x, s.y, s.rise); }
   if (!bossTriggered && spawnIdx >= spawnList.length) {
     if (!enemies.some(e => e.active) || stageTime > spawnList[spawnList.length - 1].t + 10) triggerBoss();
@@ -1509,6 +1593,10 @@ function updateBullets(dt) {
       if (b.y < AREA.yMin - 0.5 || b.y > AREA.yMax + 1.5) { b.y = clamp(b.y, AREA.yMin - 0.5, AREA.yMax + 1.5); b.vy = -b.vy; }
     }
     if (b.life <= 0 || b.z < CONFIG.hitZ - 10) { b.active = false; continue; }   // 見えないほど奥までは飛ばない
+    // トゲトゲに当たった弾は「カキン」と止まる（トゲトゲはこわれない）
+    let blocked = false;
+    for (const o of obstacles) if (o.active && o.z > CONFIG.hitZ && sweptHit(b.z, oz, b.x, b.y, o.x, o.y, o.z, o.r * 0.8, b.r)) { blocked = true; break; }
+    if (blocked) { b.active = false; burst(b.x, b.y, b.z + 1, [0xc9c3e6, 0xffffff], 3, 4, 0.12, 0.18); SND.clink(); continue; }
     for (const e of enemies) {
       if (!e.active || e.z < CONFIG.hitZ || b.hits.has(e)) continue;   // 奥すぎる敵には当たらない
       const er = ENEMY_DEF[e.type].r;
@@ -1586,16 +1674,18 @@ function updateItems(dt) {
     it.t += dt;
     const dx = player.x - it.x, dy = player.y - it.y, dxy = Math.hypot(dx, dy) || 0.001;
     const oz = it.z;
-    const pull = player.alive && (player.magnet > 0 || (dxy < 3.5 && it.z > -30));
+    // すぐ近くに来たときだけ少し吸いよせる（マグネット中は強く）
+    const pull = player.alive && (player.magnet > 0 || (dxy < CONFIG.itemPullRange && it.z > -12));
     it.z += (player.magnet > 0 ? 30 : 13) * dt;
-    if (pull) { const sp = Math.min(dxy / dt, player.magnet > 0 ? 20 : 12); it.x += dx / dxy * sp * dt; it.y += dy / dxy * sp * dt; }
+    if (pull) { const sp = Math.min(dxy / dt, player.magnet > 0 ? 20 : 4); it.x += dx / dxy * sp * dt; it.y += dy / dxy * sp * dt; }
+    else { it.x = clamp(it.x + Math.cos(it.t * 1.4) * 1.2 * dt, -AREA.x, AREA.x); }   // ふわふわ左右にゆれる
     const pop = Math.min(1, it.t / 0.25), m = it.mesh;
     m.position.set(it.x, it.y + Math.sin(it.t * 4) * 0.2, it.z);
     m.userData.inner.rotation.z = Math.sin(it.t * 2.2) * 0.7;
     m.scale.setScalar(pop * (1.6 + Math.sin(it.t * 6) * 0.06));
     m.userData.glow.scale.setScalar(1 + Math.sin(it.t * 5) * 0.12); m.userData.glow.material.opacity = 0.35 + Math.sin(it.t * 5) * 0.15;
     if (m.userData.spark) m.userData.spark.scale.setScalar(0.1 + Math.random() * 0.08);
-    if (player.alive && crossesPlayer(oz, it.z) && Math.hypot(it.x - player.x, it.y - player.y) < 2.2) { collectItem(it); continue; }
+    if (player.alive && crossesPlayer(oz, it.z) && Math.hypot(it.x - player.x, it.y - player.y) < CONFIG.itemPickRange) { collectItem(it); continue; }
     if (it.z > 9) { it.active = false; m.visible = false; }
   }
 }
@@ -1606,12 +1696,13 @@ function updateStars(dt) {
     const oz = s.z;
     if (s.t < 0.3) { s.vx *= Math.exp(-5 * dt); s.vy *= Math.exp(-5 * dt); s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt; }
     else {
-      // 自機に吸い込まれていく
-      const rate = (player.magnet > 0 || s.homeIn) ? 9 : 2.6;
-      if (player.alive) { const k = 1 - Math.exp(-rate * dt); s.x += (player.x - s.x) * k; s.y += (player.y - s.y) * k; }
-      s.z += (s.homeIn || player.magnet > 0 ? 70 : 48) * dt;
+      // 近くにあるときだけ自機に吸いよせられる（マグネット中・ボスをたおしたあとは全部）
+      const strong = player.magnet > 0 || s.homeIn;
+      const d = Math.hypot(player.x - s.x, player.y - s.y);
+      if (player.alive && (strong || d < CONFIG.starPullRange)) { const k = 1 - Math.exp(-(strong ? 9 : 3) * dt); s.x += (player.x - s.x) * k; s.y += (player.y - s.y) * k; }
+      s.z += (strong ? 70 : 40) * dt;
     }
-    if (player.alive && crossesPlayer(oz, s.z) && Math.hypot(s.x - player.x, s.y - player.y) < 2.6) {
+    if (player.alive && crossesPlayer(oz, s.z) && Math.hypot(s.x - player.x, s.y - player.y) < 1.9) {
       s.active = false; addScore(10); SND.star(); if (!feverActive) addFever(CONFIG.feverPerStar);
       const p = take(parts); if (p) { p.active = true; p.x = player.x; p.y = player.y; p.z = PZ; p.vx = rand(-2, 2); p.vy = 3; p.vz = 0; p.g = 0; p.max = p.life = 0.2; p.size = 0.25; p.col.setHex(0xfff27a); }
       continue;
@@ -1697,6 +1788,15 @@ function syncInstances() {
   }
   eBulletOut.count = eBulletBody.count = eBulletHi.count = c;
   [eBulletOut, eBulletBody, eBulletHi].forEach(m => m.instanceMatrix.needsUpdate = true);
+  // トゲトゲがぶつかる場所のわっか（少し早めに出す）
+  for (const o of obstacles) {
+    if (!o.active || !player.alive || o.z >= PZ || w >= EB_N) continue;
+    const tta = (PZ - o.z) / CONFIG.obstacleSpeed, T = CONFIG.warnTime * 1.4;
+    if (tta > T) continue;
+    const k = tta / T;
+    dummy.position.set(o.x, o.y, PZ + 0.05); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(o.r * 1.1 + k * 1.4); dummy.updateMatrix();
+    warnMesh.setMatrixAt(w, dummy.matrix); warnMesh.setColorAt(w, tmpColor.setHex(0xff3f8f).lerp(new THREE.Color(0xffd0e6), k)); w++;
+  }
   warnMesh.count = w; warnMesh.instanceMatrix.needsUpdate = true; if (warnMesh.instanceColor) warnMesh.instanceColor.needsUpdate = true;
 
   c = 0;
@@ -1722,6 +1822,7 @@ function syncInstances() {
   for (const e of enemies) if (e.active) addShadow(e.x, e.y, e.z, ENEMY_DEF[e.type].r);
   for (const it of items) if (it.active) addShadow(it.x, it.y, it.z, 0.8);
   if (boss.active && boss.mesh.visible) addShadow(boss.x, boss.y, boss.z, boss.r);
+  for (const o of obstacles) if (o.active) addShadow(o.x, o.y, o.z, o.r);
   shadowMesh.count = s; shadowMesh.instanceMatrix.needsUpdate = true;
 }
 function syncPlayer(dt) {
@@ -1863,6 +1964,7 @@ function clearWorld() {
   for (const p of [pBullets, eBullets, stars, parts]) for (const o of p) o.active = false;
   for (const r of rings) { r.active = false; r.mesh.visible = false; }
   for (const t of texts) { t.active = false; t.el.style.display = 'none'; }
+  for (const o of obstacles) { o.active = false; o.mesh.visible = false; }
   boss.active = false; boss.phase = 'none'; boss.mesh.visible = false; timers.length = 0; assistTarget = null;
 }
 function resetGame() {
@@ -1873,7 +1975,7 @@ function resetGame() {
   gameTime = 0; stageTime = 0; score = 0; dispScore = 0; kills = 0; combo = 0; maxCombo = 0; comboTimer = 0;
   fever = 0; if (feverActive) endFever(); feverActive = false;
   hitstop = 0; trauma = 0; flashV = 0; dmgV = 0; bombCool = 0;
-  spawnList = buildSpawnList(); spawnIdx = 0; bossTriggered = false;
+  spawnList = buildSpawnList(); spawnIdx = 0; bossTriggered = false; obT = 0;
   $('bossBar').classList.add('hidden'); bgm.tempo = 128;
 }
 function goTitle() {
@@ -1972,13 +2074,13 @@ function tick(dt) {
   const playing = state === 'playing' || state === 'boss';
   if (playing) {
     updatePlayer(dt); assistTarget = player.alive ? findAssist() : null;
-    updateShot(dt); updateSpawns(dt); updateEnemies(dt); updateBoss(dt); updateBullets(dt); updateItems(dt); updateStars(dt);
+    updateShot(dt); updateSpawns(dt); updateObstacles(dt); updateEnemies(dt); updateBoss(dt); updateBullets(dt); updateItems(dt); updateStars(dt);
   } else if (state === 'title' || state === 'howto') {
     const ox = player.x, oy = player.y;
     player.x = Math.sin(gameTime * 0.7) * 3.5; player.y = 2.2 + Math.sin(gameTime * 1.1) * 0.8;
     player.vx = (player.x - ox) / dt; player.vy = (player.y - oy) / dt;
   } else {
-    updateEnemies(dt); updateBoss(dt); updateItems(dt); updateStars(dt);
+    updateObstacles(dt); updateEnemies(dt); updateBoss(dt); updateItems(dt); updateStars(dt);
     for (const b of eBullets) if (b.active) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.t += dt; if (b.z > 12) b.active = false; }
   }
   updateParticles(dt);
@@ -2011,6 +2113,8 @@ const G = window.__G = window.__game = {
   get items() { return items.filter(i => i.active).map(i => ({ type: i.type, x: i.x, y: i.y, z: i.z })); },
   get stars() { return stars.filter(s => s.active).length; },
   get level() { return level; },
+  get obstacles() { return obstacles.filter(o => o.active).map(o => ({ x: o.x, y: o.y, z: o.z })); },
+  get spawnList() { return spawnList; },
   get score() { return score; }, get kills() { return kills; }, get combo() { return combo; }, get maxCombo() { return maxCombo; },
   get fever() { return { value: fever, active: feverActive }; },
   get boss() { return { active: boss.active, phase: boss.phase, hp: boss.hp, x: boss.x, y: boss.y, z: boss.z }; },
@@ -2023,6 +2127,7 @@ const G = window.__G = window.__game = {
     spawnItem: (type, x = 0, y = 4.5, z = -40) => { spawnItem(type, x, y, z); },
     setInvincible(v) { cheatInv = !!v; },
     setWeapon(k) { setWeapon(k); },
+    spawnObstacle: (x = 0, y = 4.5, z = -60) => spawnObstacle(x, y, 1.1, z), obstaclePattern: () => spawnObstaclePattern(),
     setLevel(lv) { level = lv; },
     skipToBoss() { for (const e of enemies) { e.active = false; e.mesh.visible = false; } spawnIdx = spawnList.length; triggerBoss(); },
     setFever(v) { if (v >= 100) { fever = 100; startFever(); } else fever = clamp(v, 0, 100); },
