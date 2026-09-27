@@ -226,7 +226,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 </style>
 </head>
 <body>
-<!-- build: 2026-09-27 3D v2.2 -->
+<!-- build: 2026-09-27 3D v2.3 -->
 <canvas id="c"></canvas>
 <div id="feverFx"></div>
 
@@ -264,7 +264,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
     <button data-d="easy">かんたん</button><button data-d="normal" class="on">ふつう</button><button data-d="hard">むずかしい</button></div>
   <button class="btn" id="btnStart">スタート</button>
   <div class="title-row"><button class="btn sub small" id="btnSound">おと：オン</button></div>
-  <div class="ver">v2.2 3D / 2026-09-27</div>
+  <div class="ver">v2.3 3D / 2026-09-27</div>
 </div>
 
 <div id="howto" class="screen hidden">
@@ -282,11 +282,11 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
       <div class="card"><div class="ic"><div class="mini-aim"><i></i></div></div>
         <div class="tx"><b>ねらう</b>まえの わっかに てきを かさねよう。ピンクに なったら うちどき！</div></div>
       <div class="card"><div class="ic"><div class="mini-warn"><i></i></div></div>
-        <div class="tx"><b>よける</b>トゲトゲは こわせないよ！ピンクの わっかは ぶつかる ばしょ。よけよう</div></div>
+        <div class="tx"><b>よける</b>トゲトゲと てっぱんは こわせないよ！ピンクは ぶつかる ばしょ。よけよう</div></div>
       <div class="card"><div class="ic"><div class="mini-gauge"><i></i></div><div class="tata">⭐⭐⭐</div></div>
         <div class="tx"><b>フィーバー</b>⭐を あつめて ゲージが いっぱいに なると さいきょう パワー！</div></div>
       <div class="card"><div class="ic"><div class="mini-boss"></div></div>
-        <div class="tx"><b>ボス</b>さいごに ボスが でるよ。たおして クリアを めざそう！</div></div>
+        <div class="tx"><b>ボス</b>くちが ピンクに ひかったら チャンス！ じゃくてんを ねらおう</div></div>
     </div>
     <div class="items-row weapons">
       <div class="lbl">ぶき</div>
@@ -379,7 +379,10 @@ const CONFIG = {
   warnTime: 1.4,          // 敵の弾の「くる場所わっか」を何秒前から出すか
   // --- 難易度 ---
   enemyBulletSpeed: 24,   // 敵の弾の速さ
-  bossHP: 450,            // ボスの体力
+  bossHP: 240,            // ボスの体力
+  bossOpenTime: 2.8,      // ボスのじゃくてん（くち）がひらいている時間（秒）
+  bossWeakDamage: 3,      // じゃくてんに当てたときのダメージの倍率
+  bossArmorDamage: 0.5,   // くちがとじているときのダメージの倍率
   shooterInterval: 2.2,   // 弾をうつ敵の発射間隔（秒）
   bigInterval: 2.8,       // 大きい敵の発射間隔（秒）
   waveShootRate: 0.25,    // ゆれる敵が弾をうつ確率（0〜1）
@@ -394,6 +397,10 @@ const CONFIG = {
   obstacleInterval: 7,    // トゲトゲが出てくる間隔（秒）
   obstacleSpeed: 32,      // トゲトゲが近づいてくる速さ
   obstacleWalls: true,    // トゲトゲのかべ（横一列・たて一列）を出すか
+  // --- てっぱん（こわせない。くるくる転がってくる） ---
+  plateInterval: 9,       // てっぱんが出てくる間隔（秒）
+  plateSpeed: 26,         // てっぱんが近づいてくる速さ
+  plateSpin: 2.4,         // てっぱんの回る速さ
   // --- アイテムの吸いよせ ---
   itemPullRange: 1.8,     // アイテムが自機に吸いよせられはじめる距離（マグネットなし）
   itemPickRange: 1.7,     // アイテムを取れる距離
@@ -406,11 +413,11 @@ const CONFIG = {
 // ---------------------------------------------------------------------
 const LEVELS = {
   easy: { label: 'かんたん', maxHP: 5, startBombs: 2, invincibleTime: 2.2, enemyBulletSpeed: 19, shooterInterval: 3.0, bigInterval: 3.6,
-          waveShootRate: 0.1, enemyDensity: 0.5, maxEnemies: 8, maxEnemyBullets: 14, dropHoming: 0.8, enemyHpScale: 0.75, bossHP: 320, bossItemInterval: 8,
+          waveShootRate: 0.1, enemyDensity: 0.5, maxEnemies: 8, maxEnemyBullets: 14, dropHoming: 0.8, enemyHpScale: 0.75, bossHP: 150, bossOpenTime: 3.6, bossItemInterval: 8, plateInterval: 15, plateSpeed: 20, plateSpin: 1.8,
           obstacleInterval: 11, obstacleSpeed: 26, obstacleWalls: false },
   normal: { label: 'ふつう' },
   hard: { label: 'むずかしい', maxHP: 3, startBombs: 1, invincibleTime: 1.4, enemyBulletSpeed: 28, shooterInterval: 1.6, bigInterval: 2.1,
-          waveShootRate: 0.45, enemyDensity: 0.85, maxEnemies: 13, maxEnemyBullets: 36, dropHoming: 3.2, enemyHpScale: 1.25, bossHP: 600, bossItemInterval: 16,
+          waveShootRate: 0.45, enemyDensity: 0.85, maxEnemies: 13, maxEnemyBullets: 36, dropHoming: 3.2, enemyHpScale: 1.25, bossHP: 340, bossOpenTime: 2.2, bossItemInterval: 16, plateInterval: 6, plateSpeed: 30, plateSpin: 3.0,
           obstacleInterval: 4.5, obstacleSpeed: 38 },
 };
 const BASE_CONFIG = { ...CONFIG };
@@ -702,6 +709,12 @@ const BOSS_SCALE = 1.45;
     const jewel = new THREE.Mesh(sphereLo, toon([0xff5fa2, 0x6ecbff, 0x5fe0c1, 0x9b7bff, 0xff9660][i])); jewel.scale.setScalar(0.22); jewel.position.set(c.position.x, 2.9, c.position.z + 0.5); g.add(jewel);
   }
   for (const s of [-1, 1]) { const hand = withOutline(new THREE.Mesh(sphereLo, toon(0xff9ccb)), 1.1); hand.scale.setScalar(0.75); hand.position.set(s * 3.1, -0.3, 0.8); g.add(hand); }
+  // じゃくてん（くちの中の光る玉）。ひらいたときだけ大きくなる
+  const core = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0xff5fa2 }));
+  core.position.copy(new V3(0, -0.35, 1).normalize().multiplyScalar(2.95)); core.scale.setScalar(0.001); g.add(core);
+  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.12, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffd84d }));
+  coreRing.position.copy(core.position).add(new V3(0, 0, 0.1)); coreRing.scale.setScalar(0.001); g.add(coreRing);
+  boss.core = core; boss.coreRing = coreRing;
   g.visible = false; scene.add(g); boss.mesh = g; boss.mat = mat;
 }
 
@@ -799,6 +812,83 @@ function updateObstacles(dt) {
   }
 }
 let obT = 0;
+
+// ---------------------------------------------------------------------
+//  てっぱん（こわせない）：まんなかの横の線を軸にして、上がこちらへ、下が奥へと
+//  転がるように回りながら近づいてくる
+// ---------------------------------------------------------------------
+const PLATE_W = 4.6, PLATE_H = 3.4, PLATE_T = 0.3;
+const plateTex = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 192; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 256, 192); gr.addColorStop(0, '#d7dde8'); gr.addColorStop(0.5, '#b4bdcc'); gr.addColorStop(1, '#9aa4b6');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 192);
+  g.strokeStyle = '#6b7486'; g.lineWidth = 14; g.strokeRect(7, 7, 242, 178);
+  // しましま（きけん）の帯
+  g.save(); g.beginPath(); g.rect(14, 74, 228, 44); g.clip();
+  g.fillStyle = '#ffd84d'; g.fillRect(14, 74, 228, 44); g.fillStyle = '#3b2f55';
+  for (let x = -60; x < 280; x += 32) { g.beginPath(); g.moveTo(x, 118); g.lineTo(x + 16, 118); g.lineTo(x + 60, 74); g.lineTo(x + 44, 74); g.closePath(); g.fill(); }
+  g.restore();
+  // びょう
+  for (const [x, y] of [[28, 28], [228, 28], [28, 164], [228, 164], [128, 28], [128, 164]]) {
+    g.fillStyle = '#6b7486'; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill();
+    g.fillStyle = '#eef2f8'; g.beginPath(); g.arc(x - 2, y - 2, 5, 0, 7); g.fill();
+  }
+  g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 8; g.beginPath(); g.moveTo(40, 150); g.lineTo(90, 40); g.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const plateGeo = new THREE.BoxGeometry(PLATE_W, PLATE_H, PLATE_T);
+const plateWarnGeo = new THREE.PlaneGeometry(PLATE_W, PLATE_H);
+const plates = makePool(10, () => {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshToonMaterial({ color: 0xffffff, map: plateTex, gradientMap: gradTex, transparent: true });
+  const body = new THREE.Mesh(plateGeo, mat); g.add(body);
+  const edge = new THREE.Mesh(plateGeo, OUTLINE); edge.scale.set(1.035, 1.05, 1.4); g.add(edge);
+  g.visible = false; scene.add(g);
+  const warn = new THREE.Mesh(plateWarnGeo, new THREE.MeshBasicMaterial({ color: 0xff3f8f, transparent: true, opacity: 0.2, depthTest: false, depthWrite: false, fog: false, side: THREE.DoubleSide }));
+  warn.renderOrder = 16; warn.visible = false; scene.add(warn);
+  return { active: false, x: 0, y: 0, z: 0, ang: 0, t: 0, hitDone: false, mesh: g, mat, edge, warn };
+});
+function spawnPlate(x, y, z = SPAWN_Z) {
+  const p = take(plates); if (!p) return;
+  Object.assign(p, { active: true, x: clamp(x, -AREA.x + 1.2, AREA.x - 1.2), y: clamp(y, AREA.yMin + 0.5, AREA.yMax - 0.5), z, ang: rand(0, 6.28), t: 0, hitDone: false });
+  p.mesh.visible = true; p.edge.visible = true; p.mat.opacity = 1;
+}
+function platePattern() {
+  if (!CONFIG.obstacleWalls || Math.random() < 0.6) spawnPlate(player.x, player.y);   // 自機をねらって1まい
+  else {   // 2まいならんで、かたほうだけ すきまがある
+    const y = rand(AREA.yMin + 1, AREA.yMax - 1), sd = Math.random() < 0.5 ? 1 : -1;
+    spawnPlate(-sd * 4.7, y); spawnPlate(0, y, SPAWN_Z - 4);
+  }
+}
+// (px,py,pz) が てっぱんの中にあるか（m = よゆう）
+function plateHits(p, px, py, pz, m) {
+  const dx = px - p.x, dy = py - p.y, dz = pz - p.z, c = Math.cos(p.ang), sn = Math.sin(p.ang);
+  const ly = dy * c + dz * sn, lz = -dy * sn + dz * c;
+  return Math.abs(dx) < PLATE_W / 2 + m && Math.abs(ly) < PLATE_H / 2 + m && Math.abs(lz) < PLATE_T / 2 + m;
+}
+function updatePlates(dt) {
+  for (const p of plates) {
+    if (!p.active) continue;
+    p.t += dt;
+    for (let k = 0; k < 3; k++) {   // 回りながら動くので、こまかく分けて当たりを調べる
+      p.z += CONFIG.plateSpeed * dt / 3; p.ang += CONFIG.plateSpin * dt / 3;
+      if (player.alive && !p.hitDone && Math.abs(p.z - PZ) < PLATE_H / 2 + 1 && plateHits(p, player.x, player.y, PZ, CONFIG.hitRadius)) {
+        p.hitDone = true;
+        if (player.shield > 0) { burst(player.x, player.y, PZ, [0x7fd3ff, 0xffffff], 8, 6, 0.18, 0.3); SND.clink(); }
+        else { hurtPlayer(); SND.clink(); }
+      }
+    }
+    p.mesh.position.set(p.x, p.y, p.z); p.mesh.rotation.x = p.ang;   // +回転で上がこちら（+z）へ、下が奥へ
+    // ぶつかる場所をピンクで知らせる
+    const tta = (PZ - (p.z + PLATE_H / 2)) / CONFIG.plateSpeed;
+    p.warn.visible = player.alive && p.z < PZ + 1 && tta < 2.2;
+    if (p.warn.visible) { p.warn.position.set(p.x, p.y, PZ + 0.06); p.warn.material.opacity = 0.1 + 0.28 * (1 - clamp(tta / 2.2, 0, 1)) + Math.sin(p.t * 18) * 0.05; }
+    // 自機を通りすぎたら、うすくなって消える
+    if (p.z > PZ + 1.5) { p.edge.visible = false; p.mat.opacity = Math.max(0, 1 - (p.z - PZ - 1.5) / 3); }
+    if (p.z > PZ + 5) { p.active = false; p.mesh.visible = false; p.warn.visible = false; }
+  }
+}
+let plT = 0;
 
 // 敵の弾が「くる場所」わっか
 const warnMesh = new THREE.InstancedMesh(new THREE.RingGeometry(0.72, 1, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthTest: false, fog: false }), EB_N);
@@ -950,6 +1040,7 @@ function noise(dur, o = {}) {
 }
 let lastHitSnd = 0, lastStarSnd = 0, starChain = 0, lastClink = 0;
 const SND = {
+  chance() { if (!AC) return; const t = AC.currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(f, f, 0.12, { type: 'triangle', vol: 0.18, at: t + i * 0.07 })); },
   clink() { if (!AC || AC.currentTime - lastClink < 0.06) return; lastClink = AC.currentTime; tone(2400, 1900, 0.05, { type: 'square', vol: 0.03 }); tone(3600, 3200, 0.04, { type: 'triangle', vol: 0.03 }); },
   shot(kind = 'normal') {
     if (!AC) return; const t = AC.currentTime;
@@ -1238,6 +1329,7 @@ function findAssist() {
   if (boss.active && boss.phase === 'fight') {
     const d = Math.hypot(boss.x - player.x, boss.y - player.y);
     if (d < CONFIG.aimAssist + boss.r * 0.7 && d < bd) best = boss;
+    if (best === boss && boss.act === 'open') return { isWeak: true, x: boss.x, y: boss.mesh.position.y - 1.42 * BOSS_SCALE / 1.45, z: boss.z + boss.r, vx: boss.vx, vy: boss.vy };
   }
   return best;
 }
@@ -1422,6 +1514,7 @@ function updateSpawns(dt) {
   if (state !== 'playing') return;
   stageTime += dt;
   if (stageTime > 6) { obT -= dt; if (obT <= 0) { obT = CONFIG.obstacleInterval * rand(0.8, 1.2); spawnObstaclePattern(); } }
+  if (stageTime > 12) { plT -= dt; if (plT <= 0) { plT = CONFIG.plateInterval * rand(0.8, 1.2); platePattern(); } }
   while (spawnIdx < spawnList.length && spawnList[spawnIdx].t <= stageTime) { const s = spawnList[spawnIdx++]; if (s.type === 'big' || enemies.filter(e => e.active).length < CONFIG.maxEnemies) spawnEnemy(s.type, s.x, s.y, s.rise); }
   if (!bossTriggered && spawnIdx >= spawnList.length) {
     if (!enemies.some(e => e.active) || stageTime > spawnList[spawnList.length - 1].t + 10) triggerBoss();
@@ -1434,10 +1527,53 @@ function triggerBoss() {
   after(2.6, spawnBoss);
 }
 function spawnBoss() {
-  Object.assign(boss, { active: true, hp: CONFIG.bossHP, maxHp: CONFIG.bossHP, x: 0, y: GROUND_Y - 22, z: -55, t: 0, phase: 'enter', pat: 0, patT: 0, fireT: 1, spin: 0, summonT: 7, flash: 0, squash: 0, splashed: false });
+  Object.assign(boss, { active: true, hp: CONFIG.bossHP, maxHp: CONFIG.bossHP, x: 0, y: GROUND_Y - 22, z: -55, t: 0, phase: 'enter', pat: 0, patT: 0, fireT: 1, spin: 0, summonT: 7, flash: 0, squash: 0, splashed: false,
+    act: 'attack', actT: 4.5, moveT: 0, cycle: 0, angry: false, rushPh: '', rx: 0, ry: 0, rushHit: false, open: 0, weakTxtT: 0 });
+  boss.mat.color.setHex(0xff7eb8);
   boss.mesh.visible = true; $('bossBar').classList.remove('hidden');
 }
 function crossesPlayer(prevZ, z) { return prevZ < PZ && z >= PZ; }
+function nextBossAttack(half) {
+  boss.act = 'attack'; boss.actT = 4.5; boss.pat = (boss.pat + 1) % (half ? 3 : 2); boss.fireT = 0.6;
+  if (half && player.alive) spawnPlate(player.x, player.y, boss.z + boss.r + 3);   // おこると てっぱんも なげてくる
+}
+// とっしん：自機のいた場所めがけて、目の前までつっこんでくる
+function startRush() {
+  boss.act = 'rush'; boss.rushPh = 'aim'; boss.actT = 1.4; boss.rushHit = false;
+  boss.rx = clamp(player.x, -AREA.x + 1, AREA.x - 1); boss.ry = clamp(player.y, AREA.yMin, AREA.yMax);
+  banner('とっしんが くるよ！', 'warn'); SND.warning();
+}
+function updateRush(dt, half) {
+  if (boss.rushPh === 'aim') {   // ねらいをつけて、ぶるぶるふるえる
+    const k = 1 - Math.exp(-4 * dt);
+    boss.x += (boss.rx - boss.x) * k + Math.sin(boss.t * 60) * 0.06; boss.y += (boss.ry - boss.y) * k; boss.z += (-48 - boss.z) * k;
+    if (boss.actT <= 0) boss.rushPh = 'go';
+  } else if (boss.rushPh === 'go') {
+    const front0 = boss.z + boss.r * 0.7;
+    boss.z += 75 * dt;
+    const front1 = boss.z + boss.r * 0.7;
+    if (!boss.rushHit && front0 < PZ && front1 >= PZ) {
+      boss.rushHit = true; addShake(1);
+      if (player.alive && Math.hypot(boss.x - player.x, boss.y - player.y) < boss.r * 0.75 + CONFIG.hitRadius) hurtPlayer();
+    }
+    if (boss.z >= -3) { boss.rushPh = 'back'; boss.actT = 1.2; }
+  } else {   // もとの場所へもどる
+    const k = 1 - Math.exp(-3 * dt);
+    boss.z += (-52 - boss.z) * k;
+    if (boss.actT <= 0) nextBossAttack(half);
+  }
+}
+// ボスに当たったときのダメージの倍率（くちがひらいていて、じゃくてんに近いほど大きい）
+function bossHitMul(x, y) {
+  if (boss.act !== 'open') return CONFIG.bossArmorDamage;
+  const wy = boss.mesh.position.y - 1.42 * BOSS_SCALE / 1.45;
+  if (Math.hypot(x - boss.x, y - wy) < 1.9) {
+    burst(boss.x, wy, boss.z + boss.r, [0xff5fa2, 0xffd84d, 0xffffff], 5, 7, 0.2, 0.3);
+    if (boss.weakTxtT <= 0) { boss.weakTxtT = 0.6; popText(boss.x, wy + 1, boss.z + boss.r, 'じゃくてん！', 'big', 0.7, 1.5); }
+    return CONFIG.bossWeakDamage;
+  }
+  return 1;
+}
 
 function updateEnemies(dt) {
   for (const e of enemies) {
@@ -1510,25 +1646,45 @@ function updateBoss(dt) {
     addShake(dt * 0.6);
     if (k >= 1) { boss.phase = 'fight'; boss.t = 0; boss.patT = 0; boss.fireT = 0.8; boss.itemT = CONFIG.bossItemInterval * 0.5; }
   } else if (boss.phase === 'fight') {
-    boss.x = Math.sin(boss.t * 0.5) * 4.5; boss.y = 5 + Math.sin(boss.t * 0.8) * 1.8; boss.z = -55 + Math.sin(boss.t * 0.6) * 5;
-    const half = boss.hp < boss.maxHp * 0.5;
-    boss.patT += dt;
-    if (boss.patT > 5.5) { boss.patT = 0; boss.pat = (boss.pat + 1) % (half ? 3 : 2); boss.fireT = 0.7; }
-    boss.fireT -= dt;
-    if (boss.fireT <= 0 && player.alive) {
-      const ox = boss.x, oy = boss.y - 1, oz = boss.z + boss.r;
-      if (boss.pat === 0) { for (const k of [-1, 0, 1]) fireAt(ox, oy, oz, player.x + k * 1.8, player.y, PZ, 21); boss.fireT = 1.3; SND.enemyShot(); }
-      else if (boss.pat === 1) {
-        boss.spin += 0.3;
-        for (let i = 0; i < 6; i++) { const a = boss.spin + i / 6 * Math.PI * 2; fireAt(ox, oy, oz, ox + Math.cos(a) * 7.5, oy + Math.sin(a) * 7.5 * 0.8, PZ, 19); }
-        boss.fireT = 1.9; SND.enemyShot();
-      } else {
-        boss.spin += 0.35;
-        fireAt(ox, oy, oz, ox + Math.cos(boss.spin) * 6, oy + Math.sin(boss.spin) * 5, PZ, 18);
-        fireAt(ox, oy, oz, ox - Math.cos(boss.spin) * 6, oy - Math.sin(boss.spin) * 5, PZ, 18);
-        boss.fireT = 0.24;
-      }
+    const half = boss.hp < boss.maxHp * 0.5, spd = half ? 1.35 : 1;
+    if (half && !boss.angry) {   // 体力が半分になったらおこる
+      boss.angry = true; boss.mat.color.setHex(0xff4f7a);
+      banner('ボスが おこった！', 'warn'); SND.warning(); addShake(0.6);
     }
+    boss.actT -= dt; boss.moveT += dt; boss.weakTxtT -= dt;
+    // ふだんの動き（上下左右に大きく動く）
+    if (boss.act !== 'rush') {
+      const tx = Math.sin(boss.moveT * 0.55 * spd) * 5.5, ty = 4.8 + Math.sin(boss.moveT * 0.9 * spd) * 2.2, tz = -52 + Math.sin(boss.moveT * 0.7) * 6;
+      const k = 1 - Math.exp(-(boss.act === 'open' ? 1.2 : 3) * dt);
+      boss.x += (tx - boss.x) * k; boss.y += (ty - boss.y) * k; boss.z += (tz - boss.z) * k;
+    }
+    if (boss.act === 'attack') {
+      boss.fireT -= dt;
+      if (boss.fireT <= 0 && player.alive) {
+        const ox = boss.x, oy = boss.y - 1, oz = boss.z + boss.r;
+        if (boss.pat === 0) { for (const k of [-1, 0, 1]) fireAt(ox, oy, oz, player.x + k * 1.8, player.y, PZ, 21); boss.fireT = 1.3 / spd; SND.enemyShot(); }
+        else if (boss.pat === 1) {
+          boss.spin += 0.3;
+          for (let i = 0; i < 6; i++) { const a = boss.spin + i / 6 * Math.PI * 2; fireAt(ox, oy, oz, ox + Math.cos(a) * 7.5, oy + Math.sin(a) * 7.5 * 0.8, PZ, 19); }
+          boss.fireT = 1.9 / spd; SND.enemyShot();
+        } else {
+          boss.spin += 0.35;
+          fireAt(ox, oy, oz, ox + Math.cos(boss.spin) * 6, oy + Math.sin(boss.spin) * 5, PZ, 18);
+          fireAt(ox, oy, oz, ox - Math.cos(boss.spin) * 6, oy - Math.sin(boss.spin) * 5, PZ, 18);
+          boss.fireT = 0.24;
+        }
+      }
+      if (boss.actT <= 0) {   // こうげきのあとは、くちがひらいてチャンス
+        boss.act = 'open'; boss.actT = CONFIG.bossOpenTime;
+        popText(boss.x, boss.y + 6, boss.z, 'チャンス！', 'big item', 1.3, 2); SND.chance();
+      }
+    } else if (boss.act === 'open') {
+      if (boss.actT <= 0) {
+        boss.cycle++;
+        if (half && boss.cycle % 2 === 1) startRush();
+        else nextBossAttack(half);
+      }
+    } else if (boss.act === 'rush') updateRush(dt, half);
     // ボス戦でもときどきアイテムが出る
     boss.itemT -= dt;
     if (boss.itemT <= 0) {
@@ -1563,6 +1719,14 @@ function updateBoss(dt) {
   boss.mesh.position.set(boss.x, boss.y + Math.sin(boss.t * 2) * 0.3, boss.z);
   boss.mesh.rotation.y = Math.sin(boss.t * 0.8) * 0.2; boss.mesh.rotation.z = -boss.vx * 0.03;
   boss.mat.emissiveIntensity = boss.flash * 0.5;
+  // じゃくてんの表示（ひらくと大きく光る）
+  const want = boss.phase === 'fight' && boss.act === 'open' ? 1 : 0;
+  boss.open += (want - boss.open) * (1 - Math.exp(-10 * dt));
+  const pul = 1 + Math.sin(boss.t * 14) * 0.1;
+  boss.core.scale.setScalar(Math.max(0.001, boss.open * 0.85 * pul));
+  boss.coreRing.scale.setScalar(Math.max(0.001, boss.open * (1.1 + Math.sin(boss.t * 8) * 0.15)));
+  boss.coreRing.rotation.z += dt * 3;
+  if (boss.phase === 'fight' && boss.act === 'rush' && boss.rushPh === 'aim') boss.mesh.rotation.z = Math.sin(boss.t * 50) * 0.08;
 }
 
 function nearestTarget(x, y, z) {
@@ -1595,6 +1759,11 @@ function updateBullets(dt) {
     if (b.life <= 0 || b.z < CONFIG.hitZ - 10) { b.active = false; continue; }   // 見えないほど奥までは飛ばない
     // トゲトゲに当たった弾は「カキン」と止まる（トゲトゲはこわれない）
     let blocked = false;
+    for (const pl of plates) {
+      if (!pl.active || pl.z < CONFIG.hitZ) continue;
+      for (let k = 0; k < 4 && !blocked; k++) { const f = k / 3; if (plateHits(pl, b.x - b.vx * dt * f, b.y - b.vy * dt * f, b.z - b.vz * dt * f, b.r * 0.5)) blocked = true; }
+      if (blocked) break;
+    }
     for (const o of obstacles) if (o.active && o.z > CONFIG.hitZ && sweptHit(b.z, oz, b.x, b.y, o.x, o.y, o.z, o.r * 0.8, b.r)) { blocked = true; break; }
     if (blocked) { b.active = false; burst(b.x, b.y, b.z + 1, [0xc9c3e6, 0xffffff], 3, 4, 0.12, 0.18); SND.clink(); continue; }
     for (const e of enemies) {
@@ -1610,7 +1779,7 @@ function updateBullets(dt) {
     if (b.active && boss.active && boss.phase === 'fight' && !b.hits.has(boss) && sweptHit(b.z, oz, b.x, b.y, boss.x, boss.y, boss.z, boss.r, b.r)) {
       burst(b.x, b.y, boss.z + boss.r, [0xffffff, 0xfff27a], 3, 4, 0.15, 0.18);
       if (b.pierce) b.hits.add(boss); else b.active = false;
-      damageBoss(b.dmg);
+      damageBoss(b.dmg * bossHitMul(b.x, b.y));
     }
   }
   for (const c of cBullets) {
@@ -1623,7 +1792,7 @@ function updateBullets(dt) {
       if (sweptHit(c.z, oz, c.x, c.y, e.x, e.y, e.z, ENEMY_DEF[e.type].r, R)) { c.hits.add(e); damageEnemy(e, CONFIG.chargeDamage); spawnRing(e.x, e.y, e.z, 0xffd84d, 0.3, 3, 0.25); }
     }
     if (boss.active && boss.phase === 'fight' && !c.hits.has(boss) && sweptHit(c.z, oz, c.x, c.y, boss.x, boss.y, boss.z, boss.r, R)) {
-      c.hits.add(boss); damageBoss(CONFIG.chargeDamage); spawnRing(c.x, c.y, boss.z + boss.r, 0xffd84d, 0.5, 5, 0.3); addShake(0.3);
+      c.hits.add(boss); damageBoss(CONFIG.chargeDamage * bossHitMul(c.x, c.y)); spawnRing(c.x, c.y, boss.z + boss.r, 0xffd84d, 0.5, 5, 0.3); addShake(0.3);
     }
     c.mesh.position.set(c.x, c.y, c.z); c.ring.rotation.z += dt * 8; c.ring.scale.setScalar(1 + Math.sin(c.t * 30) * 0.08);
     if (c.z < CONFIG.hitZ - 10) { c.active = false; c.mesh.visible = false; }
@@ -1797,6 +1966,11 @@ function syncInstances() {
     dummy.position.set(o.x, o.y, PZ + 0.05); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(o.r * 1.1 + k * 1.4); dummy.updateMatrix();
     warnMesh.setMatrixAt(w, dummy.matrix); warnMesh.setColorAt(w, tmpColor.setHex(0xff3f8f).lerp(new THREE.Color(0xffd0e6), k)); w++;
   }
+  if (boss.active && boss.phase === 'fight' && boss.act === 'rush' && boss.rushPh !== 'back' && w < EB_N) {
+    const k = 0.5 + Math.sin(gameTime * 16) * 0.5;
+    dummy.position.set(boss.rx, boss.ry, PZ + 0.05); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(boss.r * 0.75 + CONFIG.hitRadius); dummy.updateMatrix();
+    warnMesh.setMatrixAt(w, dummy.matrix); warnMesh.setColorAt(w, tmpColor.setHex(0xff3f8f).lerp(new THREE.Color(0xffffff), k * 0.5)); w++;
+  }
   warnMesh.count = w; warnMesh.instanceMatrix.needsUpdate = true; if (warnMesh.instanceColor) warnMesh.instanceColor.needsUpdate = true;
 
   c = 0;
@@ -1823,6 +1997,7 @@ function syncInstances() {
   for (const it of items) if (it.active) addShadow(it.x, it.y, it.z, 0.8);
   if (boss.active && boss.mesh.visible) addShadow(boss.x, boss.y, boss.z, boss.r);
   for (const o of obstacles) if (o.active) addShadow(o.x, o.y, o.z, o.r);
+  for (const p of plates) if (p.active && p.z < PZ + 1) addShadow(p.x, p.y, p.z, PLATE_W * 0.45);
   shadowMesh.count = s; shadowMesh.instanceMatrix.needsUpdate = true;
 }
 function syncPlayer(dt) {
@@ -1862,7 +2037,7 @@ function syncPlayer(dt) {
   reticle.scale.setScalar(locked ? 1.15 + Math.sin(t * 16) * 0.08 : 1);
   lockMark.visible = locked && reticle.visible;
   if (locked) {
-    const r = assistTarget === boss ? boss.r : ENEMY_DEF[assistTarget.type].r;
+    const r = assistTarget === boss ? boss.r : assistTarget.isWeak ? 1.3 : ENEMY_DEF[assistTarget.type].r;
     lockMark.position.set(assistTarget.x, assistTarget.y, assistTarget.z + r);
     lockMark.scale.setScalar(r * 1.25 + Math.sin(t * 14) * 0.1);
     lockMark.rotation.z = Math.sin(t * 5) * 0.2;
@@ -1965,6 +2140,7 @@ function clearWorld() {
   for (const r of rings) { r.active = false; r.mesh.visible = false; }
   for (const t of texts) { t.active = false; t.el.style.display = 'none'; }
   for (const o of obstacles) { o.active = false; o.mesh.visible = false; }
+  for (const p of plates) { p.active = false; p.mesh.visible = false; p.warn.visible = false; }
   boss.active = false; boss.phase = 'none'; boss.mesh.visible = false; timers.length = 0; assistTarget = null;
 }
 function resetGame() {
@@ -1975,7 +2151,7 @@ function resetGame() {
   gameTime = 0; stageTime = 0; score = 0; dispScore = 0; kills = 0; combo = 0; maxCombo = 0; comboTimer = 0;
   fever = 0; if (feverActive) endFever(); feverActive = false;
   hitstop = 0; trauma = 0; flashV = 0; dmgV = 0; bombCool = 0;
-  spawnList = buildSpawnList(); spawnIdx = 0; bossTriggered = false; obT = 0;
+  spawnList = buildSpawnList(); spawnIdx = 0; bossTriggered = false; obT = 0; plT = 0;
   $('bossBar').classList.add('hidden'); bgm.tempo = 128;
 }
 function goTitle() {
@@ -2074,13 +2250,13 @@ function tick(dt) {
   const playing = state === 'playing' || state === 'boss';
   if (playing) {
     updatePlayer(dt); assistTarget = player.alive ? findAssist() : null;
-    updateShot(dt); updateSpawns(dt); updateObstacles(dt); updateEnemies(dt); updateBoss(dt); updateBullets(dt); updateItems(dt); updateStars(dt);
+    updateShot(dt); updateSpawns(dt); updateObstacles(dt); updatePlates(dt); updateEnemies(dt); updateBoss(dt); updateBullets(dt); updateItems(dt); updateStars(dt);
   } else if (state === 'title' || state === 'howto') {
     const ox = player.x, oy = player.y;
     player.x = Math.sin(gameTime * 0.7) * 3.5; player.y = 2.2 + Math.sin(gameTime * 1.1) * 0.8;
     player.vx = (player.x - ox) / dt; player.vy = (player.y - oy) / dt;
   } else {
-    updateObstacles(dt); updateEnemies(dt); updateBoss(dt); updateItems(dt); updateStars(dt);
+    updateObstacles(dt); updatePlates(dt); updateEnemies(dt); updateBoss(dt); updateItems(dt); updateStars(dt);
     for (const b of eBullets) if (b.active) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.t += dt; if (b.z > 12) b.active = false; }
   }
   updateParticles(dt);
@@ -2113,6 +2289,8 @@ const G = window.__G = window.__game = {
   get items() { return items.filter(i => i.active).map(i => ({ type: i.type, x: i.x, y: i.y, z: i.z })); },
   get stars() { return stars.filter(s => s.active).length; },
   get level() { return level; },
+  get plates() { return plates.filter(p => p.active).map(p => ({ x: p.x, y: p.y, z: p.z, ang: p.ang })); },
+  get bossAct() { return boss.act; },
   get obstacles() { return obstacles.filter(o => o.active).map(o => ({ x: o.x, y: o.y, z: o.z })); },
   get spawnList() { return spawnList; },
   get score() { return score; }, get kills() { return kills; }, get combo() { return combo; }, get maxCombo() { return maxCombo; },
@@ -2127,7 +2305,7 @@ const G = window.__G = window.__game = {
     spawnItem: (type, x = 0, y = 4.5, z = -40) => { spawnItem(type, x, y, z); },
     setInvincible(v) { cheatInv = !!v; },
     setWeapon(k) { setWeapon(k); },
-    spawnObstacle: (x = 0, y = 4.5, z = -60) => spawnObstacle(x, y, 1.1, z), obstaclePattern: () => spawnObstaclePattern(),
+    spawnObstacle: (x = 0, y = 4.5, z = -60) => spawnObstacle(x, y, 1.1, z), obstaclePattern: () => spawnObstaclePattern(), spawnPlate: (x = 0, y = 4.5, z = -60) => spawnPlate(x, y, z), setBossHp(v) { boss.hp = v; },
     setLevel(lv) { level = lv; },
     skipToBoss() { for (const e of enemies) { e.active = false; e.mesh.visible = false; } spawnIdx = spawnList.length; triggerBoss(); },
     setFever(v) { if (v >= 100) { fever = 100; startFever(); } else fever = clamp(v, 0, 100); },
