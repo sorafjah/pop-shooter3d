@@ -226,7 +226,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 </style>
 </head>
 <body>
-<!-- build: 2026-09-27 3D v2.6 -->
+<!-- build: 2026-09-27 3D v2.7 -->
 <canvas id="c"></canvas>
 <div id="feverFx"></div>
 
@@ -264,7 +264,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
     <button data-d="easy">かんたん</button><button data-d="normal" class="on">ふつう</button><button data-d="hard">むずかしい</button></div>
   <button class="btn" id="btnStart">スタート</button>
   <div class="title-row"><button class="btn sub small" id="btnSound">おと：オン</button></div>
-  <div class="ver">v2.6 3D / 2026-09-27</div>
+  <div class="ver">v2.7 3D / 2026-09-27</div>
 </div>
 
 <div id="howto" class="screen hidden">
@@ -345,7 +345,7 @@ import * as THREE from 'three';
 // =====================================================================
 const CONFIG = {
   // --- 移動 ---
-  moveSpeed: 10,          // 自機の最高移動速度（スピードLv1のとき）
+  moveSpeed: 12,          // 自機の最高移動速度（スピードLv1のとき）
   speedStep: 0.2,         // スピードアイテム1こで速くなる割合
   maxSpeedLv: 4,          // スピードの最大レベル
   stickDeadZone: 0.12,    // スティックの遊び（0〜1）
@@ -452,7 +452,7 @@ function take(pool) {
 function makePool(n, f) { const a = []; for (let i = 0; i < n; i++) a.push(f(i)); a.cur = 0; return a; }
 
 // 座標系：X=左右、Y=上下、Z=奥行き（マイナスが奥）。自機は Z=0 の面を上下左右に動く
-const AREA = { x: 7, yMin: 1.2, yMax: 8.4 };
+const AREA = { x: 11, yMin: 1.2, yMax: 8.4 };   // 自機と敵が動ける範囲（左右±11）
 const PZ = 0;
 const GROUND_Y = -5;
 const SPAWN_Z = -150;
@@ -546,9 +546,9 @@ function buildDeco(kind) {
 }
 function placeDeco(d, z) {
   const k = d.userData.kind, side = Math.random() < 0.5 ? -1 : 1;
-  if (k === 'island') d.position.set(side * rand(13, 34), rand(-3, 9), z);
-  else if (k === 'puff') d.position.set(side * rand(11, 30), rand(-2, 12), z);
-  else if (k === 'balloon') d.position.set(side * rand(10, 20), rand(3, 11), z);
+  if (k === 'island') d.position.set(side * rand(18, 38), rand(-3, 9), z);
+  else if (k === 'puff') d.position.set(side * rand(17, 34), rand(-2, 12), z);
+  else if (k === 'balloon') d.position.set(side * rand(16, 26), rand(3, 11), z);
   else if (k === 'arch') d.position.set(0, 4.8, z);
   d.scale.setScalar(k === 'arch' ? 1 : rand(0.8, 1.7));
   d.rotation.y = k === 'arch' ? 0 : rand(0, 6.28);
@@ -1283,7 +1283,8 @@ function buildSpawnList() {
 function spawnEnemy(type, x, y, rise = false, z = SPAWN_Z) {
   let e = enemies.find(o => !o.active && o.type === type);
   if (!e) { e = createEnemy(type); enemies.push(e); }
-  Object.assign(e, { active: true, x, y, z: rise ? -75 : z, x0: x, y0: y, ty: y, rise, aimed: false, dvx: 0, dvy: 0, armor: type === 'armor', byCharge: false, hp: ENEMY_DEF[type].hp * CONFIG.enemyHpScale, t: 0, flash: 0, squash: 0,
+  Object.assign(e, { active: true, x, y, z: rise ? -75 : z, x0: x, y0: y, ty: y, rise, aimed: false, dvx: 0, dvy: 0, offX: 0, offY: 0,
+    entX: (rise || type === 'dash') ? 0 : (x > 0.5 ? 1 : x < -0.5 ? -1 : (Math.random() < 0.5 ? -1 : 1)) * rand(8, 16), entY: (rise || type === 'dash') ? 0 : rand(-2, 5), armor: type === 'armor', byCharge: false, hp: ENEMY_DEF[type].hp * CONFIG.enemyHpScale, t: 0, flash: 0, squash: 0,
     fireT: type === 'big' ? 0.6 : 0.4, willShoot: type === 'wave' && Math.random() < CONFIG.waveShootRate, phase: 'in', targetZ: type === 'big' ? rand(-50, -42) : rand(-55, -40), stayT: 0, ph: rand(0, 6.28), vx: 0, vy: 0, vz: 0 });
   if (rise) e.y = GROUND_Y - 6;
   e.mesh.visible = true; e.mesh.position.set(e.x, e.y, e.z);
@@ -1614,6 +1615,7 @@ function updateEnemies(dt) {
     if (!e.active) continue;
     const d = ENEMY_DEF[e.type]; e.t += dt;
     const px = e.x, py = e.y, pz = e.z;
+    e.x -= e.offX; e.y -= e.offY;   // いったん「入ってくる動き」の分をはずす
     switch (e.type) {
       case 'drop':
         e.z += d.speed * CONFIG.enemySpeedScale * dt;
@@ -1662,6 +1664,8 @@ function updateEnemies(dt) {
         }
         break;
     }
+    // 遠くにいるうちは画面の左右・上下の外がわにいて、近づくにつれて自分の場所に入ってくる
+    { const f = clamp((e.z + 120) / 75, 0, 1), k = (1 - f) * (1 - f); e.offX = e.entX * k; e.offY = e.entY * k; e.x += e.offX; e.y += e.offY; }
     e.vx = (e.x - px) / dt; e.vy = (e.y - py) / dt; e.vz = (e.z - pz) / dt;
     // 自機との接触（自機の面を通り過ぎるとき）
     if (player.alive && crossesPlayer(pz, e.z)) {
@@ -1701,7 +1705,7 @@ function updateBoss(dt) {
     boss.actT -= dt; boss.moveT += dt; boss.weakTxtT -= dt;
     // ふだんの動き（上下左右に大きく動く）
     if (boss.act !== 'rush') {
-      const tx = Math.sin(boss.moveT * 0.55 * spd) * 5.5, ty = 4.8 + Math.sin(boss.moveT * 0.9 * spd) * 2.2, tz = -52 + Math.sin(boss.moveT * 0.7) * 6;
+      const tx = Math.sin(boss.moveT * 0.55 * spd) * 8.5, ty = 4.8 + Math.sin(boss.moveT * 0.9 * spd) * 2.2, tz = -52 + Math.sin(boss.moveT * 0.7) * 6;
       const k = 1 - Math.exp(-(boss.act === 'open' ? 1.2 : 3) * dt);
       boss.x += (tx - boss.x) * k; boss.y += (ty - boss.y) * k; boss.z += (tz - boss.z) * k;
     }
@@ -1739,7 +1743,7 @@ function updateBoss(dt) {
       spawnItem(pickItemType(), clamp(boss.x + rand(-3, 3), -AREA.x, AREA.x), boss.y, boss.z + boss.r + 2);
       burst(boss.x, boss.y, boss.z + boss.r, [0xffffff, 0xffd84d], 10, 6, 0.25, 0.4);
     }
-    if (half) { boss.summonT -= dt; if (boss.summonT <= 0) { boss.summonT = 7; for (const s of [-4, 0, 4]) spawnEnemy('drop', clamp(boss.x + s, -6.5, 6.5), clamp(boss.y + 2, AREA.yMin, AREA.yMax), false, boss.z - 3); } }
+    if (half) { boss.summonT -= dt; if (boss.summonT <= 0) { boss.summonT = 7; for (const s of [-4, 0, 4]) spawnEnemy('drop', clamp(boss.x + s * 1.5, -AREA.x + 1, AREA.x - 1), clamp(boss.y + 2, AREA.yMin, AREA.yMax), false, boss.z - 3); } }
   } else if (boss.phase === 'dying') {
     boss.dieT += dt; boss.boomT -= dt; boss.x += Math.sin(boss.dieT * 60) * 0.08;
     if (boss.dieT < 1.8 && boss.boomT <= 0) {
@@ -2127,9 +2131,9 @@ const camLook = new V3();
 function updateCamera(dt) {
   const k = 1 - Math.exp(-5 * dt);
   // 自機の少し上・後ろから見る（照準のわっかが自機の上に見える）
-  const tx = player.x * 0.6, ty = player.y * 0.55 + 4.6;
+  const tx = player.x * 0.72, ty = player.y * 0.55 + 4.6;
   camPos.x += (tx - camPos.x) * k; camPos.y += (ty - camPos.y) * k; camPos.z = 11;
-  camLook.set(player.x * 0.55, player.y * 0.55 + 1.6, -40);
+  camLook.set(player.x * 0.66, player.y * 0.55 + 1.6, -40);
   const targetFov = feverActive ? 68 : 60; curFov += (targetFov - curFov) * Math.min(1, dt * 3);
   if (Math.abs(camera.fov - curFov) > 0.01) { camera.fov = curFov; camera.updateProjectionMatrix(); }
   if (!paused) trauma = Math.max(0, trauma - dt * 1.8);
