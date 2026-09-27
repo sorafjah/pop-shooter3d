@@ -226,7 +226,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 </style>
 </head>
 <body>
-<!-- build: 2026-09-27 3D v2.3 -->
+<!-- build: 2026-09-27 3D v2.4 -->
 <canvas id="c"></canvas>
 <div id="feverFx"></div>
 
@@ -264,7 +264,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
     <button data-d="easy">かんたん</button><button data-d="normal" class="on">ふつう</button><button data-d="hard">むずかしい</button></div>
   <button class="btn" id="btnStart">スタート</button>
   <div class="title-row"><button class="btn sub small" id="btnSound">おと：オン</button></div>
-  <div class="ver">v2.3 3D / 2026-09-27</div>
+  <div class="ver">v2.4 3D / 2026-09-27</div>
 </div>
 
 <div id="howto" class="screen hidden">
@@ -734,7 +734,7 @@ const cBullets = makePool(6, () => {
   const g = new THREE.Group();
   const core = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })); core.scale.setScalar(0.55); g.add(core);
   const glow = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: 0xffd84d, transparent: true, opacity: 0.55, depthWrite: false, fog: false })); g.add(glow);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.08, 8, 32), new THREE.MeshBasicMaterial({ color: 0xff5fa2, fog: false })); g.add(ring);
+  const ring = new THREE.Group();   // （輪っかの飾りはなし）
   g.visible = false; scene.add(g);
   return { active: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, t: 0, hits: new Set(), mesh: g, ring };
 });
@@ -818,29 +818,11 @@ let obT = 0;
 //  転がるように回りながら近づいてくる
 // ---------------------------------------------------------------------
 const PLATE_W = 4.6, PLATE_H = 3.4, PLATE_T = 0.3;
-const plateTex = (() => {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 192; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 256, 192); gr.addColorStop(0, '#d7dde8'); gr.addColorStop(0.5, '#b4bdcc'); gr.addColorStop(1, '#9aa4b6');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 192);
-  g.strokeStyle = '#6b7486'; g.lineWidth = 14; g.strokeRect(7, 7, 242, 178);
-  // しましま（きけん）の帯
-  g.save(); g.beginPath(); g.rect(14, 74, 228, 44); g.clip();
-  g.fillStyle = '#ffd84d'; g.fillRect(14, 74, 228, 44); g.fillStyle = '#3b2f55';
-  for (let x = -60; x < 280; x += 32) { g.beginPath(); g.moveTo(x, 118); g.lineTo(x + 16, 118); g.lineTo(x + 60, 74); g.lineTo(x + 44, 74); g.closePath(); g.fill(); }
-  g.restore();
-  // びょう
-  for (const [x, y] of [[28, 28], [228, 28], [28, 164], [228, 164], [128, 28], [128, 164]]) {
-    g.fillStyle = '#6b7486'; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill();
-    g.fillStyle = '#eef2f8'; g.beginPath(); g.arc(x - 2, y - 2, 5, 0, 7); g.fill();
-  }
-  g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 8; g.beginPath(); g.moveTo(40, 150); g.lineTo(90, 40); g.stroke();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-})();
 const plateGeo = new THREE.BoxGeometry(PLATE_W, PLATE_H, PLATE_T);
 const plateWarnGeo = new THREE.PlaneGeometry(PLATE_W, PLATE_H);
 const plates = makePool(10, () => {
   const g = new THREE.Group();
-  const mat = new THREE.MeshToonMaterial({ color: 0xffffff, map: plateTex, gradientMap: gradTex, transparent: true });
+  const mat = new THREE.MeshToonMaterial({ color: 0xb4bcc9, gradientMap: gradTex, transparent: true });   // ただの鉄板
   const body = new THREE.Mesh(plateGeo, mat); g.add(body);
   const edge = new THREE.Mesh(plateGeo, OUTLINE); edge.scale.set(1.035, 1.05, 1.4); g.add(edge);
   g.visible = false; scene.add(g);
