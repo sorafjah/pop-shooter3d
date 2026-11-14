@@ -223,6 +223,28 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
 @keyframes wshrink{0%{transform:scale(1.25);opacity:.4}100%{transform:scale(.7);opacity:1}}
 .mini-boss{width:8vh;height:8vh;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0d6,#ff7eb8);border:.35vh solid var(--ink);position:relative}
 .mini-boss::before{content:'👑';position:absolute;top:-3.2vh;left:50%;transform:translateX(-50%);font-size:3.4vh}
+/* スマホ用レイアウト調整2 */
+@media (orientation:portrait) and (max-width:500px) {
+  #rotate .ipad-word { display:none; }
+}
+@media (orientation:landscape) and (max-height:500px) {
+  #title { gap:10px; }
+  .logo { font-size:min(9vw,64px); margin-bottom:0; }
+  .diff { padding:4px 8px; gap:6px; }
+  .diff button { min-height:44px; font-size:17px; min-width:92px; }
+  #btnStart { min-height:48px; padding:6px 48px; font-size:24px; }
+  .btn.small { min-height:44px; font-size:16px; padding:6px 20px; }
+  .ver { font-size:11px; bottom:4px; }
+  #result, #pause, #howto { justify-content:flex-start; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  #result > .panel, #pause > .panel, #howto > .howto-box { margin:auto 0; }
+  .panel { padding:10px 28px 14px; border-radius:22px; }
+  .panel h2 { font-size:32px; margin-bottom:4px; }
+  .stats { font-size:17px; gap:2px 20px; margin:4px 0 6px; }
+  .newrec { font-size:18px; margin-bottom:4px; }
+  .panel .row { margin-top:6px; }
+  #btnGo { position:sticky; bottom:6px; z-index:5; min-height:46px; font-size:22px; }
+}
+/* /スマホ用レイアウト調整2 */
 </style>
 </head>
 <body>
@@ -332,7 +354,7 @@ html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%
   </div>
 </div>
 
-<div id="rotate" class="screen hidden"><div class="ico">📱</div><div>iPadを よこむきに してね</div></div>
+<div id="rotate" class="screen hidden"><div class="ico">📱</div><div><span class="ipad-word">iPadを </span>よこむきに してね</div></div>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
